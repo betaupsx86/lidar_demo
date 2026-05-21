@@ -167,7 +167,6 @@
         </header>
 
         <main class="grid" id="visualization-grid">
-            <!-- Dynamic cards will render here -->
             <div class="empty-state" id="loading-status">Scanning root directory for point clouds...</div>
         </main>
 
@@ -182,36 +181,41 @@
             const status = document.getElementById('loading-status');
 
             try {
-                // Fetch the current directory root index parsed by your local server
+                // Fetch the raw text directory listing directly from Python server
                 const response = await fetch('./');
                 const text = await response.text();
                 
-                // Parse out links using a temporary DOM element
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                const links = Array.from(doc.querySelectorAll('a'));
+                // Regex matches href="filename.html" or href='filename.html'
+                const hrefRegex = /href=["']([^"']+\.html)["']/gi;
+                const htmlFiles = [];
+                let match;
                 
-                // Filter out self index, hidden elements, and keep only .html files
-                const htmlFiles = links
-                    .map(link => link.getAttribute('href'))
-                    .filter(href => href && href.endsWith('.html') && href !== 'index.html' && !href.startsWith('http'));
+                while ((match = hrefRegex.exec(text)) !== null) {
+                    const filename = match[1];
+                    // Skip self indexing copies and absolute web addresses
+                    if (filename !== 'index.html' && !filename.startsWith('http') && !htmlFiles.includes(filename)) {
+                        htmlFiles.push(decodeURIComponent(filename));
+                    }
+                }
 
                 if (htmlFiles.length === 0) {
-                    status.innerHTML = "No distinct visualization HTML files found in this directory.<br><span style='font-size:0.85rem; display:block; margin-top:0.5rem;'>Make sure you run this via a local server environment (e.g. <code>python -m http.server</code>).</span>";
+                    status.innerHTML = "No distinct visualization HTML files found in this directory.<br><span style='font-size:0.85rem; display:block; margin-top:0.5rem;'>Make sure your files end in <code>.html</code> and live alongside this <code>index.html</code> file.</span>";
                     return;
                 }
 
-                // Clear loading status
+                // Clear current display state
                 grid.innerHTML = '';
 
-                // Build cards dynamically for whatever files are present
+                // Generate a grid element for each detected point cloud
                 htmlFiles.forEach((filename, index) => {
-                    // Clean up string formatting for clean visualization card names
+                    // Normalize standard paths for clean displaying text
                     let cleanName = filename
+                        .split('/')
+                        .pop()
                         .replace('.html', '')
                         .replace(/[-_]/g, ' ');
                     
-                    // Capitalize words
+                    // Capitalize names dynamically
                     cleanName = cleanName.replace(/\b\w/g, c => c.toUpperCase());
 
                     const card = document.createElement('a');
@@ -237,11 +241,10 @@
 
             } catch (err) {
                 console.error("Directory scan error:", err);
-                status.innerHTML = "Failed to auto-scan local directory structure.<br><span style='font-size:0.85rem; display:block; margin-top:0.5rem;'>To read files dynamically, open this root folder inside a terminal and start a local host server.</span>";
+                status.innerHTML = "Error parsing local files.";
             }
         }
 
-        // Run detection loop on document load
         window.addEventListener('DOMContentLoaded', loadVisualizations);
     </script>
 </body>
