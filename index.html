@@ -3,249 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiDAR Point Cloud Visualizations</title>
+    <title>LiDAR Visualizations</title>
     <style>
-        :root {
-            --bg-color: #0b0f19;
-            --card-bg: #141b2d;
-            --border-color: #242f47;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --accent: #10b981; 
-            --accent-glow: rgba(16, 185, 129, 0.15);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
-            padding: 2rem 1rem;
+            background: #0b0f19;
+            color: #f3f4f6;
+            padding: 3rem 2rem;
+            margin: 0;
         }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        header {
-            margin-bottom: 3rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1.5rem;
-        }
-
-        h1 {
-            font-size: 2.25rem;
-            font-weight: 700;
-            letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.25rem;
-        }
-
-        @media (min-width: 640px) {
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.2s ease-in-out;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent);
-            box-shadow: 0 8px 30px var(--accent-glow);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-main);
-            word-break: break-all;
-            padding-right: 0.5rem;
-        }
-
-        .badge {
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            white-space: nowrap;
-        }
-
-        .card:hover .badge {
-            border-color: rgba(16, 185, 129, 0.3);
-            color: var(--accent);
-        }
-
-        .card-desc {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 1.5rem;
-            flex-grow: 1;
-        }
-
-        .card-footer {
+        .container { max-width: 640px; margin: 0 auto; }
+        h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.4rem; }
+        p.sub { color: #9ca3af; margin-bottom: 2.5rem; font-size: 0.95rem; }
+        ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+        li a {
             display: flex;
             align-items: center;
-            font-size: 0.87rem;
-            font-weight: 500;
-            color: var(--accent);
+            gap: 0.75rem;
+            padding: 0.85rem 1.1rem;
+            background: #141b2d;
+            border: 1px solid #242f47;
+            border-radius: 8px;
+            color: #f3f4f6;
+            text-decoration: none;
+            font-size: 0.97rem;
+            transition: border-color 0.15s, background 0.15s;
         }
-
-        .card-footer svg {
-            margin-left: 0.25rem;
-            transition: transform 0.2s ease;
-        }
-
-        .card:hover .card-footer svg {
-            transform: translateX(4px);
-        }
-
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 4rem 2rem;
-            border: 2px dashed var(--border-color);
-            border-radius: 12px;
-            color: var(--text-muted);
-        }
-
-        footer {
-            margin-top: 5rem;
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
+        li a:hover { border-color: #10b981; background: #162232; }
+        li a::before { content: "↗"; color: #10b981; font-size: 1rem; flex-shrink: 0; }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <header>
-            <h1>LiDAR Pipeline Visualizations</h1>
-            <p class="subtitle">Auto-detected point cloud scenes in your root directory.</p>
-        </header>
-
-        <main class="grid" id="visualization-grid">
-            <div class="empty-state" id="loading-status">Scanning root directory for point clouds...</div>
-        </main>
-
-        <footer>
-            <p>LiDAR Mapping Sandbox Environment</p>
-        </footer>
-    </div>
-
-    <script>
-        async function loadVisualizations() {
-            const grid = document.getElementById('visualization-grid');
-            const status = document.getElementById('loading-status');
-
-            try {
-                // Fetch the raw text directory listing directly from Python server
-                const response = await fetch('./');
-                const text = await response.text();
-                
-                // Regex matches href="filename.html" or href='filename.html'
-                const hrefRegex = /href=["']([^"']+\.html)["']/gi;
-                const htmlFiles = [];
-                let match;
-                
-                while ((match = hrefRegex.exec(text)) !== null) {
-                    const filename = match[1];
-                    // Skip self indexing copies and absolute web addresses
-                    if (filename !== 'index.html' && !filename.startsWith('http') && !htmlFiles.includes(filename)) {
-                        htmlFiles.push(decodeURIComponent(filename));
-                    }
-                }
-
-                if (htmlFiles.length === 0) {
-                    status.innerHTML = "No distinct visualization HTML files found in this directory.<br><span style='font-size:0.85rem; display:block; margin-top:0.5rem;'>Make sure your files end in <code>.html</code> and live alongside this <code>index.html</code> file.</span>";
-                    return;
-                }
-
-                // Clear current display state
-                grid.innerHTML = '';
-
-                // Generate a grid element for each detected point cloud
-                htmlFiles.forEach((filename, index) => {
-                    // Normalize standard paths for clean displaying text
-                    let cleanName = filename
-                        .split('/')
-                        .pop()
-                        .replace('.html', '')
-                        .replace(/[-_]/g, ' ');
-                    
-                    // Capitalize names dynamically
-                    cleanName = cleanName.replace(/\b\w/g, c => c.toUpperCase());
-
-                    const card = document.createElement('a');
-                    card.href = filename;
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <div>
-                            <div class="card-header">
-                                <span class="card-title" title="${filename}">${cleanName}</span>
-                                <span class="badge">Cloud ${index + 1}</span>
-                            </div>
-                            <p class="card-desc">Source file target: <code>${filename}</code></p>
-                        </div>
-                        <div class="card-footer">
-                            Launch Visualizer 
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-
-            } catch (err) {
-                console.error("Directory scan error:", err);
-                status.innerHTML = "Error parsing local files.";
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', loadVisualizations);
-    </script>
+<div class="container">
+    <h1>LiDAR Visualizations</h1>
+    <p class="sub">Click a file to open it.</p>
+    <ul>
+        <!-- Add a line here for each HTML file you drop in this folder, e.g.: -->
+        <!-- <li><a href="occupancy_raw_3d.html">occupancy_raw_3d</a></li> -->
+    </ul>
+</div>
 </body>
 </html>
